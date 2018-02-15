@@ -9,7 +9,8 @@ include setup.cfg
 recursive-include librabbitmq *
 recursive-include Modules *
 recursive-include tests *
-prune rabbitmq-c/
+recursive-include rabbitmq-c *
+prune rabbitmq-c/m4
 exclude *.pyc
 exclude *.o
 exclude *.la
