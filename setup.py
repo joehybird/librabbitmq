@@ -17,7 +17,7 @@ def senv(*k__v, **kwargs):
     for k, v in k__v:
         prev = restore[k] = os.environ.get(k)
         os.environ[k] = (prev + sep if prev else '') + str(v)
-    return dict((k, v) for k, v in restore.iteritems() if v is not None)
+    return dict((k, v) for k, v in restore.items() if v is not None)
 
 
 def codegen():
@@ -25,6 +25,7 @@ def codegen():
     spec = SPECPATH('amqp-rabbitmq-0.9.1.json')
     sys.path.insert(0, SPECPATH())
     commands = [
+        ('patch',  codegen, 'rabbitmq-c.py3.patch'),
         (sys.executable, codegen, 'header', spec, LRMQSRC('amqp_framing.h')),
         (sys.executable, codegen, 'body', spec, LRMQSRC('amqp_framing.c')),
     ]
@@ -68,10 +69,10 @@ def create_builder():
     sys.argv[1:] = unprocessed
 
     incdirs.append(LRMQSRC())
-    PyC_files = map(PYCP, [
+    PyC_files = list(map(PYCP, [
         'connection.c',
-    ])
-    librabbit_files = map(LRMQSRC, [
+    ]))
+    librabbit_files = list(map(LRMQSRC, [
         'amqp_api.c',
         'amqp_connection.c',
         'amqp_consumer.c',
@@ -83,7 +84,7 @@ def create_builder():
         'amqp_tcp_socket.c',
         'amqp_timer.c',
         'amqp_url.c',
-    ])
+    ]))
 
     incdirs.append(LRMQDIST())  # for config.h
 
@@ -123,6 +124,8 @@ def create_builder():
 
             here = os.path.abspath(os.getcwd())
             config = sysconfig.get_config_vars()
+            make = find_make()
+
             try:
                 vars = {'ld': config['LDFLAGS'],
                         'c': config['CFLAGS']}
@@ -132,13 +135,26 @@ def create_builder():
                     vars[key] = vars[key].replace('-mno-fused-madd', '')
                     vars[key] = vars[key].replace(
                         '-isysroot /Developer/SDKs/MacOSX10.6.sdk', '')
-                    vars[key] = vars[key].replace('-Wall', '')
                 restore = senv(
                     ('CFLAGS', vars['c']),
                     ('LDFLAGS', vars['ld']),
                 )
                 try:
+                    if not os.path.isdir(os.path.join(LRMQDIST(), '.git')):
+                        print('- pull submodule rabbitmq-c...')
+                        if os.path.isfile('Makefile'):
+                            os.system(' '.join([make, 'submodules']))
+                        else:
+                            os.system(' '.join(['git', 'clone', '-b', 'v0.8.0', 
+                                'https://github.com/alanxz/rabbitmq-c.git',
+                                'rabbitmq-c']))
+
                     os.chdir(LRMQDIST())
+
+                    if not os.path.isfile('configure'):
+                        print('- autoreconf')
+                        os.system('autoreconf -i')
+
                     if not os.path.isfile('config.h'):
                         print('- configure rabbitmq-c...')
                         if os.system('/bin/sh configure --disable-tools \
@@ -151,7 +167,7 @@ def create_builder():
             restore = senv(
                 ('CFLAGS', ' '.join(self.stdcflags)),
             )
-            codegen()
+            #codegen()
             try:
                 _build.run(self)
             finally:
@@ -180,15 +196,14 @@ packages = []
 goahead = False
 is_jython = sys.platform.startswith('java')
 is_pypy = hasattr(sys, 'pypy_version_info')
-is_py3k = sys.version_info[0] == 3
 is_win = platform.system() == 'Windows'
 is_linux = platform.system() == 'Linux'
-if is_jython or is_pypy or is_py3k or is_win:
+if is_jython or is_pypy or is_win:
     pass
 elif find_make():
     try:
         librabbitmq_ext, build = create_builder()
-    except Exception, exc:
+    except Exception as exc:
         print('Could not create builder: %r' % (exc, ))
         raise
     else:
@@ -225,7 +240,7 @@ setup(
     packages=packages,
     cmdclass=cmdclass,
     install_requires=[
-        'amqp>=1.4.6',
+        'amqp>=1.4.6'
     ],
     ext_modules=ext_modules,
     classifiers=[
@@ -233,9 +248,10 @@ setup(
         'Operating System :: POSIX',
         'Operating System :: Microsoft :: Windows',
         'Programming Language :: C',
-        'Programming Language :: Python :: 2.5',
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: Implementation :: CPython',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: Mozilla Public License 1.0 (MPL)',
