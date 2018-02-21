@@ -92,8 +92,8 @@ cov:
 	nosetests -xv librabbitmq.tests --with-coverage --cover-html --cover-branch
 
 removepyc:
-	-find . -type f -a \( -name "*.pyc" -o -name "*$$py.class" \) | xargs rm
-	-find . -type d -name "__pycache__" | xargs rm -r
+	-find . -type f -a \( -name "*.pyc" -o -name "*$$py.class" \) -delete
+	-find . -type d -name "__pycache__" -delete
 
 gitclean:
 	git clean -xdn

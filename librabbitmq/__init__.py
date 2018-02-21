@@ -194,7 +194,7 @@ class Connection(_librabbitmq.Connection):
             frame_max=frame_max, heartbeat=heartbeat,
         )
         self.channels = {}
-        self._avail_channel_ids = array('H', xrange(self.channel_max, 0, -1))
+        self._avail_channel_ids = array('H', range(self.channel_max, 0, -1))
         if not lazy:
             self.connect()
 
