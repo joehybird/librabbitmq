@@ -9,10 +9,9 @@ include setup.cfg
 recursive-include librabbitmq *
 recursive-include Modules *
 recursive-include tests *
-recursive-include clib *
-recursive-include rabbitmq-codegen *
-prune *.pyc
-prune *.o
-prune *.la
-prune *.so
-prune *.dylib
+exclude Makefile
+exclude *.pyc
+exclude *.o
+exclude *.la
+exclude *.so
+exclude *.dylib

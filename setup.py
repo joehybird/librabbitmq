@@ -140,14 +140,25 @@ def create_builder():
                     ('LDFLAGS', vars['ld']),
                 )
                 try:
-                    if not os.path.isdir(os.path.join(LRMQDIST(), '.git')):
+                    if not os.path.isfile(os.path.join(here, 'rabbitmq-codegen', '.gitignore')):
+                        print('- pull submodule rabbitmq-codegen...')
+                        os.system(' '.join(['git', 'clone', 
+                            'https://github.com/rabbitmq/rabbitmq-codegen.git',
+                            'rabbitmq-codegen']))
+
+                    if not os.path.isdir(os.path.join(here, 'rabbitmq-c', '.gitignore')):
                         print('- pull submodule rabbitmq-c...')
-                        if os.path.isfile('Makefile'):
-                            os.system(' '.join([make, 'submodules']))
-                        else:
-                            os.system(' '.join(['git', 'clone', '-b', 'v0.8.0', 
-                                'https://github.com/alanxz/rabbitmq-c.git',
-                                'rabbitmq-c']))
+                        os.system(' '.join(['git', 'clone', 
+                            'https://github.com/ask/rabbitmq-c.git',
+                            'rabbitmq-c']))
+
+                    if not os.path.exists(os.path.join(here, 'clib')):
+                        os.system('(cd rabbitmq-c; rm -rf codegen; ln -sf ../rabbitmq-codegen ./codegen)')
+                        os.system('(cd rabbitmq-c; test -f configure || autoreconf -i)')
+                        os.system('(cd rabbitmq-c; test -f Makefile  || automake --add-missing)')
+                        os.system('(cd rabbitmq-c; ./configure --disable-tools --disable-docs)')
+                        os.system('(cd rabbitmq-c; make distdir)')
+                        os.system('mv rabbitmq-c/rabbitmq-c-0.5.3 clib')
 
                     os.chdir(LRMQDIST())
 
@@ -160,6 +171,7 @@ def create_builder():
                         if os.system('/bin/sh configure --disable-tools \
                                 --disable-docs --disable-dependency-tracking'):
                             return
+
                 finally:
                     os.environ.update(restore)
             finally:
