@@ -72,7 +72,7 @@ _PYRMQ_INLINE int64_t RabbitMQ_now_usec(void);
 _PYRMQ_INLINE int RabbitMQ_wait_nb(int);
 _PYRMQ_INLINE int RabbitMQ_wait_timeout(int, double);
 
-_PYRMQ_INLINE void
+void
 basic_properties_to_PyDict(amqp_basic_properties_t*, PyObject*);
 
 _PYRMQ_INLINE int
@@ -369,8 +369,8 @@ PyIter_ToAMQArray(amqp_connection_state_t conn, PyObject *src, amqp_pool_t *pool
             else {
                 /* unsupported type */
                 PyErr_Format(PyExc_ValueError,
-                    "Array member at index %lu, %R, is of an unsupported type",
-                    pos, item);
+                    "Array member at index %lu, %s, is of an unsupported type",
+                    pos, PyOBJECT_REPR(item));
                 goto item_error;
             }
         }
@@ -380,7 +380,6 @@ PyIter_ToAMQArray(amqp_connection_state_t conn, PyObject *src, amqp_pool_t *pool
     return dst;
 item_error:
     Py_XDECREF(item);
-error:
     Py_XDECREF(iterator);
     assert(PyErr_Occurred());
     return dst;
@@ -442,7 +441,7 @@ _PYRMQ_INLINE int RabbitMQ_wait_timeout(int sockfd, double timeout)
 }
 
 
-_PYRMQ_INLINE void
+void
 basic_properties_to_PyDict(amqp_basic_properties_t *props, PyObject *p)
 {
     register PyObject *value = NULL;
@@ -1265,7 +1264,11 @@ PyRabbitMQ_recv(PyRabbitMQ_Connection *self, PyObject *p,
     register unsigned int j = 0;
     int retval = 0;
 
+    /*
+    1.6.1
     memset(&props, 0, sizeof(props));
+    */
+    props = NULL;
 
     while (1) {
         if (!piggyback) {
@@ -1339,6 +1342,11 @@ PyRabbitMQ_recv(PyRabbitMQ_Connection *self, PyObject *p,
                     buf = PyBytes_AsString(payload);
                     if (!buf)
                         goto finally;
+
+                    /*
+                    1.6.1
+                    view = PyBuffer_FromObject(payload, 0, (Py_ssize_t)body_target);
+                    */
                     view = PyMemoryView_FromObject(payload);
                 }
                 else {
@@ -1346,6 +1354,12 @@ PyRabbitMQ_recv(PyRabbitMQ_Connection *self, PyObject *p,
                         payload = PySTRING_FROM_AMQBYTES(
                                     frame.payload.body_fragment);
                     } else {
+                        /*
+                        1.6.1
+                        view = PyBuffer_FromMemory(bufp,
+                                    (Py_ssize_t)frame.payload.body_fragment.len);
+                        */
+
                         view = buffer_toMemoryView(bufp, (Py_ssize_t)frame.payload.body_fragment.len);
                     }
                     break;

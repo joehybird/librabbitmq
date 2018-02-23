@@ -68,6 +68,15 @@ buffer_toMemoryView(char *buf, Py_ssize_t buf_len) {
         return view;
 }
 
+#if PY_MAJOR_VERSION == 2
+    # define PyOBJECT_REPR(object)\
+         PyObject_REPR(object)
+#else
+    # define PyOBJECT_REPR(object)\
+         PyBytes_AsString(PyObject_Repr(object))
+#endif
+
+
 #define PyDICT_SETNONE_DECREF(dict, key)                            \
     do {                                                            \
         PyDict_SetItem(dict, key, Py_None);                         \
