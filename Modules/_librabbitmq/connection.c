@@ -1359,8 +1359,7 @@ PyRabbitMQ_recv(PyRabbitMQ_Connection *self, PyObject *p,
                         view = PyBuffer_FromMemory(bufp,
                                     (Py_ssize_t)frame.payload.body_fragment.len);
                         */
-
-                        view = buffer_toMemoryView(bufp, (Py_ssize_t)frame.payload.body_fragment.len);
+                        view = PyMemoryView_FromObject(PySTRING_FROM_AMQBYTES(frame.payload.body_fragment));
                     }
                     break;
                 }

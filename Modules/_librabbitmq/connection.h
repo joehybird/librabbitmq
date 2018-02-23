@@ -53,21 +53,6 @@
 # endif
 #endif
 
-
-_PYRMQ_INLINE PyObject*
-buffer_toMemoryView(char *buf, Py_ssize_t buf_len) {
-        PyObject *view;
-#if PY_MAJOR_VERSION == 2
-        PyObject *pybuffer;
-        pybuffer = PyBuffer_FromMemory(buf, buf_len);
-        view = PyMemoryView_FromObject(pybuffer);
-        Py_XDECREF(pybuffer);
-#else
-        view = PyMemoryView_FromMemory(buf, buf_len, PyBUF_READ);
-#endif
-        return view;
-}
-
 #if PY_MAJOR_VERSION == 2
     # define PyOBJECT_REPR(object)\
          PyObject_REPR(object)
